@@ -370,3 +370,34 @@ code, .mono { font-family: var(--mono); font-size: .8rem; }
 .visor-x:hover { background: var(--oak); }
 .evi-img img { aspect-ratio: 16 / 9; max-height: none; object-fit: cover; object-position: top left; }
 .evi2.col .evi-img img { aspect-ratio: 16 / 7; }
+
+/* arquitectura v3: dos filas y canal */
+.slide:has(.arq), .slide:has(.erd-wrap) { justify-content: flex-start; }
+.arq { grid-template-columns: 2.05fr 1fr; gap: 2rem; }
+.arq .entrada { margin-bottom: 1.1rem; }
+.arq .fila { display: grid; grid-template-columns: 1.5rem 1fr; gap: .7rem; position: relative; z-index: 1; }
+.arq .fila.f0 { margin-bottom: 2.9rem; }
+.arq .fila h4 { writing-mode: vertical-rl; transform: rotate(180deg); justify-self: center; align-self: stretch; text-align: center; font-family: var(--display); font-weight: 700; font-size: .68rem; letter-spacing: .02em; padding: .6rem 0; border-radius: 99px; }
+.arq .fila.f0 h4 { background: var(--o-300); }
+.arq .fila.f1 h4 { background: var(--g-300); }
+.arq .cards { display: grid; gap: 1.5rem; }
+.arq .cards.n5 { grid-template-columns: repeat(5, 1fr); }
+.arq .cards.n4 { grid-template-columns: repeat(4, 1fr); }
+.arq .sv { grid-template-columns: 1fr; gap: .1rem; padding: .7rem .8rem; }
+.arq .sv em { grid-column: 1; grid-row: auto; margin-top: .2rem; }
+.arq .sv.llama { background: #f6ead0; border: 1.5px dashed var(--warning); }
+.arq .sv.sel { background: var(--evergreen); border: 1.5px solid var(--evergreen); }
+.arq .leyenda .k.llama { background: #f6ead0; border: 1.5px dashed var(--warning); }
+.arq .bus { margin-top: 1.2rem; }
+.erd { padding-top: 1.3rem; }
+.erd-svg path { stroke-linejoin: round; stroke-linecap: round; }
+
+.arq .fila.f0 { margin-bottom: 3.6rem; }
+.arq .sv { padding: 1rem 1.05rem; gap: .2rem; }
+.arq .sv b { font-size: 1.05rem; }
+.arq .sv span { font-size: .8rem; }
+.arq .sv em { font-size: .76rem; margin-top: .35rem; }
+.arq .entrada { margin-bottom: 1.6rem; }
+.arq .bus { margin-top: 1.8rem; padding-top: .8rem; padding-bottom: .8rem; }
+.arq .stores div { padding-top: .75rem; padding-bottom: .75rem; }
+.arq .leyenda { margin-top: 1.2rem; }

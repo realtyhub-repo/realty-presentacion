@@ -203,56 +203,59 @@ const nodos = {
 };
 const casa = (e, pat) => (pat.endsWith(".*") ? e.startsWith(pat.slice(0, -1)) : e === pat);
 const almacenes = ["PostgreSQL", "MongoDB", "Redis", "R2", "Gmail SMTP"];
-const colsArq = [
-  ["Acceso", ["Auth", "User"], "var(--g-300)"],
-  ["Captación y visitas", ["Propiedades", "Leads", "Visitas"], "var(--o-300)"],
-  ["Cierre del negocio", ["Contratos", "Comisiones"], "var(--g-400)"],
-  ["Soporte", ["Notification", "Analytics"], "var(--o-300)"],
+const filasArq = [
+  ["Ciclo del negocio", ["Propiedades", "Leads", "Visitas", "Contratos", "Comisiones"]],
+  ["Soporte", ["Auth", "User", "Notification", "Analytics"]],
 ];
 const rolCorto = { Auth: "JWT y login", User: "Oficinas y agentes", Propiedades: "Catálogo", Leads: "Asignación", Visitas: "Agenda", Contratos: "Borrador y firma", Comisiones: "Reparto", Notification: "Avisos y correos", Analytics: "Métricas" };
+const filaDe = (k) => (filasArq[0][1].includes(k) ? 0 : 1);
+const colDe = (k) => filasArq[filaDe(k)][1].indexOf(k);
 const Arquitectura = () => {
   const [sel, setSel] = useState("Leads");
   const a = nodos[sel];
   const caja = useRef(null);
   const nref = useRef({});
   const [flechas, setFlechas] = useState([]);
+  const llaman = Object.keys(nodos).filter((k) => nodos[k].http.includes(sel));
   const socios = Object.keys(nodos).filter((k) => k !== sel && (nodos[k].con.some((c) => a.pub.some((e) => casa(e, c) || casa(c, e))) || nodos[k].pub.some((e) => a.con.some((c) => casa(e, c) || casa(c, e)))));
   const hay = a.pub.length + a.con.length > 0;
   useLayoutEffect(() => {
     const calc = () => {
       if (!caja.current) return;
       const o = caja.current.getBoundingClientRect();
-      const ra = nref.current[sel]?.getBoundingClientRect();
-      if (!ra) return;
-      const ci = (k) => colsArq.findIndex((c) => c[1].includes(k));
-      const colR = (i) => nref.current[colsArq[i][1][0]].getBoundingClientRect();
-      const gutter = (i) => (colR(i).right + colR(i + 1).left) / 2 - o.left;
-      const abajo = Math.max(...Object.values(nref.current).filter(Boolean).map((el) => el.getBoundingClientRect().bottom)) - o.top + 12;
-      const s0 = ci(sel);
+      const rect = (k) => nref.current[k]?.getBoundingClientRect();
+      const r0 = rect(filasArq[0][1][0]);
+      const r1 = rect(filasArq[1][1][0]);
+      if (!r0 || !r1) return;
+      const ych = (r0.bottom + r1.top) / 2 - o.top;
+      const aristas = [...a.http.map((t) => ({ s: sel, t })), ...llaman.map((s) => ({ s, t: sel }))];
       const out = [];
-      for (const t of a.http) {
-        const rb = nref.current[t]?.getBoundingClientRect();
-        if (!rb) continue;
-        const t0 = ci(t);
-        const y1 = ra.top - o.top + ra.height / 2;
-        const y2 = rb.top - o.top + rb.height / 2;
-        let pts = null;
-        if (s0 === t0) {
-          const der = s0 < colsArq.length - 1;
-          const gx = der ? gutter(s0) : gutter(s0 - 1);
-          pts = [[(der ? ra.right : ra.left) - o.left, y1], [gx, y1], [gx, y2], [(der ? rb.right + 2 : rb.left - 2) - o.left, y2]];
-        } else if (Math.abs(s0 - t0) === 1) {
-          const der = t0 > s0;
-          const gx = gutter(Math.min(s0, t0));
-          pts = [[(der ? ra.right : ra.left) - o.left, y1], [gx, y1], [gx, y2], [(der ? rb.left - 2 : rb.right + 2) - o.left, y2]];
-        } else if (colsArq[t0][1].slice(-1)[0] === t) {
-          const der = t0 > s0;
-          const gx = gutter(der ? s0 : s0 - 1);
-          const xc = rb.left + rb.width / 2 - o.left;
-          pts = [[(der ? ra.right : ra.left) - o.left, y1], [gx, y1], [gx, abajo], [xc, abajo], [xc, rb.bottom - o.top + 2]];
+      const canal = aristas.filter(({ s, t }) => !(filaDe(s) === filaDe(t) && Math.abs(colDe(s) - colDe(t)) === 1));
+      const spread = (lista, clave, e) => {
+        const grupo = lista.filter((x) => x[clave] === e[clave]);
+        return (grupo.indexOf(e) - (grupo.length - 1) / 2) * 18;
+      };
+      aristas.forEach((ar, i) => {
+        const { s, t } = ar;
+        const rs = rect(s);
+        const rt = rect(t);
+        if (!rs || !rt) return;
+        const off = (canal.indexOf(ar) - (canal.length - 1) / 2) * 8;
+        let pts;
+        if (filaDe(s) === filaDe(t) && Math.abs(colDe(s) - colDe(t)) === 1) {
+          const der = colDe(t) > colDe(s);
+          const y = rs.top + rs.height / 2 - o.top;
+          pts = [[(der ? rs.right : rs.left) - o.left, y], [(der ? rt.left - 2 : rt.right + 2) - o.left, y]];
+        } else {
+          const ys = (filaDe(s) === 0 ? rs.bottom : rs.top) - o.top;
+          const yt = (filaDe(t) === 0 ? rt.bottom + 2 : rt.top - 2) - o.top;
+          const xs = rs.left + rs.width / 2 - o.left + spread(canal, "s", ar);
+          const xt = rt.left + rt.width / 2 - o.left + spread(canal, "t", ar);
+          const yc = ych + off;
+          pts = [[xs, ys], [xs, yc], [xt, yc], [xt, yt]];
         }
-        if (pts) out.push({ k: t, d: pts.map((q, i) => `${i ? "L" : "M"}${q[0]} ${q[1]}`).join(" ") });
-      }
+        out.push({ k: `${s}-${t}`, d: pts.map((q, j) => `${j ? "L" : "M"}${q[0]} ${q[1]}`).join(" ") });
+      });
       setFlechas(out);
     };
     calc();
@@ -270,26 +273,24 @@ const Arquitectura = () => {
             <span className="gwchip">API Gateway</span>
             <small>valida el JWT y enruta</small>
           </div>
-          <div className="stem" />
-          <div className="rail4"><i /><i /><i /><i /></div>
-          <div className="cols4">
-            {colsArq.map(([g, ns, c]) => (
-              <div className="col4" key={g}>
-                <h4 style={{ background: c }}>{g}</h4>
+          {filasArq.map(([g, ns], f) => (
+            <div className={`fila f${f}`} key={g}>
+              <h4>{g}</h4>
+              <div className={`cards n${ns.length}`}>
                 {ns.map((k) => (
-                  <button key={k} ref={(el) => (nref.current[k] = el)} className={`sv ${sel === k ? "sel" : ""} ${a.http.includes(k) ? "http" : ""} ${socios.includes(k) ? "ev" : ""}`} onClick={() => setSel(k)} aria-pressed={sel === k}>
+                  <button key={k} ref={(el) => (nref.current[k] = el)} className={`sv ${sel === k ? "sel" : ""} ${a.http.includes(k) ? "http" : ""} ${llaman.includes(k) ? "llama" : ""} ${socios.includes(k) ? "ev" : ""}`} onClick={() => setSel(k)} aria-pressed={sel === k}>
                     <b>{k}</b><span>{rolCorto[k]}</span><em>:{nodos[k].p}</em>
                   </button>
                 ))}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
           <div className={`bus ${hay ? "on" : ""}`}><span>RabbitMQ</span><i />eventos de negocio</div>
           <div className="stores">
             {almacenes.map((s) => <div key={s} className={a.db.includes(s) ? "on" : ""}>{s}</div>)}
           </div>
           <div className="leyenda">
-            <span><i className="k sel" />Seleccionado</span><span><i className="k http" />Lo llama por HTTP (flecha)</span><span><i className="k ev" />Comparte eventos</span>
+            <span><i className="k sel" />Seleccionado</span><span><i className="k http" />Llama por HTTP</span><span><i className="k llama" />Lo llaman por HTTP</span><span><i className="k ev" />Comparte eventos</span>
           </div>
           <svg className="arq-svg" aria-hidden="true">
             <defs><marker id="pta" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--warning)" /></marker></defs>
@@ -301,6 +302,7 @@ const Arquitectura = () => {
           <p className="dnote">{a.n}</p>
           <div className="drow"><b>Guarda en</b><div className="chips">{a.db.map((x) => <span className="chip dark" key={x}>{x}</span>)}</div></div>
           <div className="drow"><b>Llama por HTTP a</b>{a.http.length ? <div className="chips">{a.http.map((x) => <span className="chip" key={x}>{x}</span>)}</div> : <em>Nadie: no depende de otros servicios.</em>}</div>
+          <div className="drow"><b>Lo llaman por HTTP</b>{llaman.length ? <div className="chips">{llaman.map((x) => <span className="chip" key={x}>{x}</span>)}</div> : <em>Ningún servicio lo llama directo.</em>}</div>
           <div className="drow"><b>Publica</b>{a.pub.length ? <div className="evs">{a.pub.map((x) => <span className="mono" key={x}>{x}</span>)}</div> : <em>No publica eventos.</em>}</div>
           <div className="drow"><b>Consume</b>{a.con.length ? <div className="evs">{a.con.map((x) => <span className="mono" key={x}>{x}</span>)}</div> : <em>No consume eventos.</em>}</div>
         </div>
